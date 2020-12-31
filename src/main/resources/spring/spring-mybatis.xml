@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+<!--    引入jdbc配置文件-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!--    配置连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <!--        配置基本属性-->
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+
+<!--        其他属性-->
+<!--        初始化大小-->
+        <property name="initialSize" value="5"/>
+        <!--        最小连接池数量-->
+        <property name="minIdle" value="5"/>
+        <!--        最大连接池数量-->
+        <property name="maxActive" value="20"/>
+        <!--        获取连接时最大等待时间，单位毫秒-->
+        <property name="maxWait" value="60000"/>
+        <!--        配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒-->
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <!--        配置一个连接在池中最小生存的时间，单位是毫秒-->
+        <property name="minEvictableIdleTimeMillis" value="300000"/>
+        <!--        测试连接-->
+        <property name="validationQuery" value="SELECT 1 from DUAL"/>
+        <!--        申请连接的时候检测，建议配置为true，不影响性能，并且保证安全性-->
+        <property name="testWhileIdle" value="true"/>
+        <!--        获取连接时执行检测，建议关闭，影响性能-->
+        <property name="testOnBorrow" value="false"/>
+        <!--        归还连接时执行检测，建议关闭，影响性能-->
+        <property name="testOnReturn" value="false"/>
+        <!--        是否开启PSCache，PSCache对支持游标的数据库性能提升巨大，oracle建议开启，mysql下建议关闭-->
+        <property name="poolPreparedStatements" value="false"/>
+        <!--        开启poolPreparedStatements后生效-->
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="20"/>
+        <!--        配置扩展插件，常用的插件有=>stat:监控统计  slf4j:日志  wall:防御sql注入-->
+        <property name="filters" value="stat,wall,slf4j"/>
+        <property name="connectionProperties" value="druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000"/>
+    </bean>
+
+    <!--        配置SqlSession的工厂-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource" />
+        <!-- 配置MyBaties全局配置文件:mybatis-config.xml -->
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <!--配置Mybatis的映射xml文件路径-->
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+    </bean>
+
+    <!--指定Mybatis的mapper接口扫描包-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--指定刚才我们配置好的sqlSessionFactory-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--指定mapper接口扫描包-->
+        <property name="basePackage" value="codetiger.ssmredis.ssm_redis.dao"/>
+    </bean>
+
+    <!--配置事务管理器，如果不配置这个，不启动事务扫描的话，那么发生了异常也不会触发回滚-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!--还得指定数据源-->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <!--启动事务的扫描-->
+    <tx:annotation-driven/>
+</beans>
